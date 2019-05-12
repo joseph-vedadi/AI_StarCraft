@@ -40,8 +40,8 @@ class Cyrus(sc2.BotAI):
         if not os.path.isdir(DATA_PATH):
             os.makedirs(DATA_PATH)
         current_time = str(time.time()).replace(".", "_")
-        result_file_path = os.path.join(DATA_PATH, "{current_time}.result".format(current_time=current_time))
-        f = open(result_file_path, "w")
+        result_file_path = os.path.join(DATA_PATH, "{current_time}.{game_result}".format(current_time=current_time, game_result=game_result))
+        f = open(result_file_path, "+")
         f.write(current_time + "," + game_result)
         f.close()
         if game_result == Result.Victory:
@@ -289,21 +289,25 @@ class Cyrus(sc2.BotAI):
                 self.train_data.append([y, self.flipped])
 
 
-def run_mygame(difficulty):
+def run_mygame():
+    difficulty = random.choice([Difficulty.Easy, Difficulty.Easy, Difficulty.Medium])
     run_game(
         maps.get("AbyssalReefLE"),
-        [Bot(Race.Protoss, Cyrus()), Computer(Race.Protoss, difficulty.get(True))],
+        [Bot(Race.Protoss, Cyrus()), Computer(Race.Protoss, difficulty)],
         realtime=False,
     )
 
 
-the_queue = multiprocessing.Queue()
-the_pool = multiprocessing.Pool(8, run_mygame, (the_queue,))
-#                            don't forget the coma here  ^
+# the_queue = multiprocessing.Queue()
+# the_pool = multiprocessing.Pool(3, run_mygame, (the_queue,))
+# #                            don't forget the coma here  ^
 
-for _ in range(10000):
-    difficulty = random.choice([Difficulty.Easy, Difficulty.Easy, Difficulty.Medium])
-    the_queue.put(difficulty)
+for _ in range(1000):
+    ps = []
+    for _ in range(10):
 
-time.sleep(60 * 60 * 8)  #  8 hr
-the_queue.close()
+        p = multiprocessing.Process(target=run_mygame)
+        p.start()
+        ps.append(p)
+    [p.join() for p in ps]
+
